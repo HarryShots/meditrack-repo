@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Jenkins Server with Docker
+
+Parameters:
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Select an existing EC2 KeyPair
+
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t3.micro
+      - t2.small
+      - t3.medium
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+
+  JenkinsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and Jenkins access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  JenkinsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jenkins-ec2-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+
+  JenkinsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: jenkins-instance-profile
+      Roles:
+        - !Ref JenkinsRole
+
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: JenkinsInstanceProfile
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - !Ref JenkinsSecurityGroup
+      IamInstanceProfile: !Ref JenkinsInstanceProfile
+
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+
+          # Install Java
+          amazon-linux-extras install java-openjdk11 -y
+
+          # Install Jenkins
+          wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+          rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+          yum install jenkins -y
+
+          systemctl enable jenkins
+          systemctl start jenkins
+
+          # Install Docker
+          yum install docker -y
+          systemctl enable docker
+          systemctl start docker
+
+          usermod -aG docker ec2-user
+          usermod -aG docker jenkins
+
+          # Install Git
+          yum install git -y
+
+Outputs:
+
+  JenkinsPublicIP:
+    Description: Jenkins Public IP
+    Value: !GetAtt JenkinsInstance.PublicIp
