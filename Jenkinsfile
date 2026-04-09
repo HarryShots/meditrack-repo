@@ -15,18 +15,16 @@ pipeline {
     }
 
     stage('Test') {
-      steps {
-        sh '''
-        # Install Python dependencies
-        sudo yum install python3 -y
-        pip3 install --upgrade pip
-        pip3 install -r requirements.txt
-
-        # Run tests
-        pytest
-        '''
-      }
-    }
+  steps {
+    sh '''
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    pip install pytest
+    pytest
+    '''
+  }
+}
 
     stage('Build Image') {
       steps {
