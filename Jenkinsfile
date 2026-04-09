@@ -14,13 +14,22 @@ pipeline {
       }
     }
 
-    stage('Test') {
+stage('Test') {
   steps {
     sh '''
     python3 -m venv venv
     source venv/bin/activate
+
+    # Upgrade pip FIRST
+    pip install --upgrade pip
+
+    # Install dependencies
     pip install -r requirements.txt
+
+    # Install pytest
     pip install pytest
+
+    # Run tests
     pytest
     '''
   }
