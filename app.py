@@ -6,7 +6,7 @@ app = Flask(__name__)
 patients = [
     {
         "id": 1,
-        "name": "John Doe",
+        "name": "Daniel James",
         "age": 45,
         "gender": "Male",
         "diagnosis": "Hypertension",
