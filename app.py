@@ -2,15 +2,47 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# In-memory data store
-patients = []
-next_id = 1
+# Pre-populated data (REQUIRED for tests)
+patients = [
+    {
+        "id": 1,
+        "name": "John Doe",
+        "age": 45,
+        "gender": "Male",
+        "diagnosis": "Hypertension",
+        "ward": "Cardiology",
+        "admitted_on": "2026-03-20"
+    },
+    {
+        "id": 2,
+        "name": "Jane Smith",
+        "age": 30,
+        "gender": "Female",
+        "diagnosis": "Diabetes",
+        "ward": "Endocrinology",
+        "admitted_on": "2026-03-22"
+    },
+    {
+        "id": 3,
+        "name": "Michael Brown",
+        "age": 60,
+        "gender": "Male",
+        "diagnosis": "Asthma",
+        "ward": "Pulmonology",
+        "admitted_on": "2026-03-25"
+    }
+]
+
+next_id = 4
 
 
 # Health check
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok"}), 200
+    return jsonify({
+        "status": "healthy",
+        "service": "meditrack-api"
+    }), 200
 
 
 # Get all patients
@@ -28,20 +60,26 @@ def get_patient(id):
     return jsonify({"error": "Patient not found"}), 404
 
 
-# Add new patient
+# Add patient
 @app.route('/patients', methods=['POST'])
 def add_patient():
     global next_id
     data = request.get_json()
 
-    if not data or "name" not in data:
-        return jsonify({"error": "Invalid data"}), 400
+    required_fields = ["name", "age", "gender", "diagnosis", "ward", "admitted_on"]
+
+    # Validate all required fields
+    if not data or not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
 
     new_patient = {
         "id": next_id,
         "name": data["name"],
-        "age": data.get("age", ""),
-        "condition": data.get("condition", "")
+        "age": data["age"],
+        "gender": data["gender"],
+        "diagnosis": data["diagnosis"],
+        "ward": data["ward"],
+        "admitted_on": data["admitted_on"]
     }
 
     patients.append(new_patient)
@@ -57,9 +95,7 @@ def update_patient(id):
 
     for patient in patients:
         if patient["id"] == id:
-            patient["name"] = data.get("name", patient["name"])
-            patient["age"] = data.get("age", patient["age"])
-            patient["condition"] = data.get("condition", patient["condition"])
+            patient.update(data)
             return jsonify(patient), 200
 
     return jsonify({"error": "Patient not found"}), 404
@@ -68,8 +104,6 @@ def update_patient(id):
 # Delete patient
 @app.route('/patients/<int:id>', methods=['DELETE'])
 def delete_patient(id):
-    global patients
-
     for patient in patients:
         if patient["id"] == id:
             patients.remove(patient)
