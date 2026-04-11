@@ -15,7 +15,7 @@ patients = [
     },
     {
         "id": 2,
-        "name": "Reece Henderson",
+        "name": "Andrew Henderson",
         "age": 30,
         "gender": "Female",
         "diagnosis": "Diabetes",
