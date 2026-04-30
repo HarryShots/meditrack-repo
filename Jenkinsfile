@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-    IMAGE_NAME = 'harryshots/meditrack'
+    IMAGE_NAME = 'harryshots/meditrack-v2'
   }
 
   stages {
@@ -18,7 +18,7 @@ pipeline {
       steps {
         sh '''
         # Install Python dependencies
-        sudo yum install python3 -y
+        #sudo yum install python3 -y
         pip3 install --upgrade pip
         pip3 install -r requirements.txt
 
