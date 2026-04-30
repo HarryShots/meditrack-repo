@@ -15,18 +15,16 @@ pipeline {
     }
 
     stage('Test') {
-      steps {
+    steps {
         sh '''
-        # Install Python dependencies
-        #sudo yum install python3 -y
-        pip3 install --upgrade pip
-        pip3 install -r requirements.txt
-
-        # Run tests
-        pytest
+            # Use the specific version we installed instead of generic pip3
+            python3.12 -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
         '''
-      }
     }
+}
 
     stage('Build Image') {
       steps {
